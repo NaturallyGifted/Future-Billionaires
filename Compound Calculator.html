@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Position Compound Calculator</title>
+    <!-- html2canvas library for screenshot generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0b0e11;
+            --panel-bg: #181a20;
+            --text-main: #eaecef;
+            --text-muted: #848e9c;
+            --green: #0ecb81;
+            --red: #f6465d;
+            --accent: #fcd535;
+            --border: #2b3139;
+            --btn-hover: #2b3139;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .header-input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 20px;
+            font-weight: 600;
+            text-align: right;
+            width: 150px;
+            border-bottom: 1px dashed var(--border);
+            outline: none;
+        }
+        
+        .header-input:focus {
+            border-bottom-color: var(--accent);
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-long { background-color: var(--green); color: #000; }
+        .badge-short { background-color: var(--red); color: #fff; }
+
+        /* Toolbar Actions */
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px;
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-btn:hover {
+            background-color: var(--btn-hover);
+            border-color: var(--text-muted);
+        }
+
+        .action-btn.primary {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        
+        .action-btn.primary:hover {
+            background-color: rgba(252, 213, 53, 0.1);
+        }
+
+        .action-btn.share {
+            background-color: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        .action-btn.share:hover {
+            background-color: #e5be2a;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 900px) {
+            .content-wrapper {
+                flex-direction: row;
+            }
+            .left-panel, .right-panel {
+                flex: 1.2;
+            }
+            .saved-panel {
+                flex: 0.8;
+                border-left: 1px solid var(--border);
+                background-color: rgba(24, 26, 32, 0.5);
+            }
+            .left-panel {
+                border-right: 1px solid var(--border);
+            }
+        }
+
+        .section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .left-panel .section:last-child, .right-panel .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .toggle-container {
+            display: flex;
+            background-color: var(--bg-dark);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .toggle-btn.active-long {
+            background-color: var(--green);
+            color: #000;
+        }
+
+        .toggle-btn.active-short {
+            background-color: var(--red);
+            color: #fff;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            font-size: 14px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 130px;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: right;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--accent);
+        }
+
+        .input-wrapper input.clamped {
+            border-color: var(--red);
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            50% { transform: translateX(3px); }
+            75% { transform: translateX(-3px); }
+            100% { transform: translateX(0); }
+        }
+        
+        .slider-group {
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.02);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--accent);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .stat-card {
+            background-color: var(--panel-bg);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card.highlight {
+            border-color: rgba(14, 203, 129, 0.4);
+            background-color: rgba(14, 203, 129, 0.05);
+        }
+        
+        .stat-card.warning {
+            border-color: rgba(246, 70, 93, 0.4);
+            background-color: rgba(246, 70, 93, 0.05);
+        }
+
+        .stat-card.info {
+            border-color: rgba(252, 213, 53, 0.4);
+            background-color: rgba(252, 213, 53, 0.05);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Saved Trades Panel Styles */
+        .saved-trades-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 700px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .saved-trade-item {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .saved-trade-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .saved-trade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .saved-trade-ticker {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .saved-trade-details {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .delete-btn:hover {
+            color: var(--red);
+        }
+
+        .text-green { color: var(--green); }
+        .text-red { color: var(--red); }
+        .text-accent { color: var(--accent); }
+        .text-white { color: #fff; }
+
+        .footer {
+            padding: 16px;
+            background-color: var(--panel-bg);
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+        
+        /* Custom Scrollbar for sidebar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="appContainer">
+    <div class="header">
+        <h1>
+            <input type="text" id="assetTicker" class="header-input" value="SNDKUSDT" placeholder="ASSET/TICKER">
+            <span id="headerBadge" class="badge badge-long">LONG</span>
+        </h1>
+        <p style="color: var(--text-muted); font-size: 12px; margin-top: 6px;">Universal Position Compound Calculator</p>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar" id="toolbar" data-html2canvas-ignore="true">
+        <button class="action-btn" onclick="startNewTrade()">➕ Start New Trade</button>
+        <button class="action-btn primary" onclick="saveTrade()">💾 Save Trade</button>
+        <button class="action-btn" onclick="exportImage()">📷 Export Image</button>
+        <button class="action-btn share" onclick="shareImage()">📤 Share</button>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- LEFT PANEL: Base Inputs -->
+        <div class="left-panel">
+            <div class="section">
+                <div class="section-title">Base Trade Details</div>
+                
+                <div class="toggle-container">
+                    <div id="btnLong" class="toggle-btn active-long" onclick="setDirection('LONG')">LONG</div>
+                    <div id="btnShort" class="toggle-btn" onclick="setDirection('SHORT')">SHORT</div>
+                </div>
+
+                <div class="input-group">
+                    <label style="color: var(--accent); font-weight: bold;">Total Account Capital (USDT)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="accountBalance" value="10000.00" step="100">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Leverage (x)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="leverage" value="20" step="1">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Total Position Size (USDT)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="initUsdt" value="96120.96" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Entry Price ($)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="initEntry" value="1293.70" step="0.01">
+                    </div>
+                </div>
+
+                <div class="card-grid" style="margin-top: 24px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Initial Margin Used</div>
+                        <div class="stat-value" id="valInitMargin">$0.00</div>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-label">Free Account Margin</div>
+                        <div class="stat-value text-white" id="valFreeMargin">$0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE PANEL: Compounding Engine -->
+        <div class="right-panel">
+            <div class="section">
+                <div class="section-title">1. Take Profit / Scale Out</div>
+                <div class="input-group">
+                    <label>TP Target Price ($)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="tpPrice" value="1843.08" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Close Size (USDT)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="tpUsdtInput" value="24030.24" step="0.01">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Or scale by percentage</span>
+                        <span id="tpPctLabel" class="text-accent">25.0%</span>
+                    </div>
+                    <input type="range" id="tpPctSlider" min="0" max="100" value="25" step="0.1" oninput="handleSliderChange('tp')">
+                </div>
+
+                <div class="card-grid">
+                    <div class="stat-card highlight">
+                        <div class="stat-label">Realized Profit Locked</div>
+                        <div class="stat-value text-green" id="valRealized">+$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Remaining Size</div>
+                        <div class="stat-value" id="valRemTokens">0.00 Units</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span id="reloadTitle">2. Reload (Dip Buy)</span>
+                </div>
+                <div class="input-group">
+                    <label>Reload Target ($)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="reloadPrice" value="1685.14" step="0.01">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Reload Size (USDT)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="reloadUsdtInput" value="24030.24" step="0.01">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Or scale by percentage</span>
+                        <span id="reloadPctLabel" class="text-accent">25.0%</span>
+                    </div>
+                    <input type="range" id="reloadPctSlider" min="0" max="100" value="25" step="0.1" oninput="handleSliderChange('reload')">
+                </div>
+
+                <div class="card-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">New Total Size</div>
+                        <div class="stat-value" id="valNewTotal">0.00 Units</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">New Avg Entry Price</div>
+                        <div class="stat-value text-accent" id="valNewEntry">$0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Saved Trades Sidebar -->
+        <div class="saved-panel section" data-html2canvas-ignore="true">
+            <div class="section-title">Saved Trades Data</div>
+            <div class="saved-trades-list" id="savedTradesList">
+                <!-- Trades injected here by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State
+    let tradeDirection = 'LONG';
+    let savedTrades = JSON.parse(localStorage.getItem('compounderSavedTrades')) || [];
+
+    // DOM Elements
+    const elAssetTicker = document.getElementById('assetTicker');
+    const elAccountBalance = document.getElementById('accountBalance');
+    const elInitUsdt = document.getElementById('initUsdt');
+    const elInitEntry = document.getElementById('initEntry');
+    const elLeverage = document.getElementById('leverage');
+    const elInitMargin = document.getElementById('valInitMargin');
+    const elFreeMargin = document.getElementById('valFreeMargin');
+
+    const elTpPrice = document.getElementById('tpPrice');
+    const elTpUsdtInput = document.getElementById('tpUsdtInput');
+    const elTpPctSlider = document.getElementById('tpPctSlider');
+    const elTpPctLabel = document.getElementById('tpPctLabel');
+    
+    const elReloadPrice = document.getElementById('reloadPrice');
+    const elReloadUsdtInput = document.getElementById('reloadUsdtInput');
+    const elReloadPctSlider = document.getElementById('reloadPctSlider');
+    const elReloadPctLabel = document.getElementById('reloadPctLabel');
+
+    const elRealized = document.getElementById('valRealized');
+    const elRemTokens = document.getElementById('valRemTokens');
+    const elNewTotal = document.getElementById('valNewTotal');
+    const elNewEntry = document.getElementById('valNewEntry');
+    
+    const btnLong = document.getElementById('btnLong');
+    const btnShort = document.getElementById('btnShort');
+    const headerBadge = document.getElementById('headerBadge');
+    const reloadTitle = document.getElementById('reloadTitle');
+    const savedTradesList = document.getElementById('savedTradesList');
+
+    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+    const formatTokens = (val) => val.toFixed(4) + ' Units';
+
+    function triggerClampAnimation(element) {
+        element.classList.remove('clamped');
+        void element.offsetWidth;
+        element.classList.add('clamped');
+        setTimeout(() => element.classList.remove('clamped'), 300);
+    }
+
+    function setDirection(dir) {
+        tradeDirection = dir;
+        if (dir === 'LONG') {
+            btnLong.classList.add('active-long');
+            btnShort.classList.remove('active-short');
+            headerBadge.className = 'badge badge-long';
+            headerBadge.innerText = 'LONG';
+            reloadTitle.innerText = '2. Reload (Dip Buy)';
+        } else {
+            btnLong.classList.remove('active-long');
+            btnShort.classList.add('active-short');
+            headerBadge.className = 'badge badge-short';
+            headerBadge.innerText = 'SHORT';
+            reloadTitle.innerText = '2. Reload (Bounce / Re-Short)';
+        }
+        calculate();
+    }
+
+    function handleSliderChange(type) {
+        const initialUsdt = parseFloat(elInitUsdt.value) || 0;
+        if (type === 'tp') {
+            const pct = parseFloat(elTpPctSlider.value) / 100;
+            elTpUsdtInput.value = (initialUsdt * pct).toFixed(2);
+        } else if (type === 'reload') {
+            const pct = parseFloat(elReloadPctSlider.value) / 100;
+            elReloadUsdtInput.value = (initialUsdt * pct).toFixed(2);
+        }
+        calculate();
+    }
+
+    function enforceConstraints() {
+        const accountBal = parseFloat(elAccountBalance.value) || 0;
+        const lev = parseFloat(elLeverage.value) || 1;
+        let initUsdt = parseFloat(elInitUsdt.value) || 0;
+        let tpUsdt = parseFloat(elTpUsdtInput.value) || 0;
+
+        const maxAllowedInitUsdt = accountBal * lev;
+        if (initUsdt > maxAllowedInitUsdt) {
+            initUsdt = maxAllowedInitUsdt;
+            elInitUsdt.value = initUsdt.toFixed(2);
+            triggerClampAnimation(elInitUsdt);
+        }
+        if (tpUsdt > initUsdt) {
+            tpUsdt = initUsdt;
+            elTpUsdtInput.value = tpUsdt.toFixed(2);
+            triggerClampAnimation(elTpUsdtInput);
+        }
+        return { accountBal, lev, initUsdt, tpUsdt };
+    }
+
+    function calculate() {
+        const { accountBal, lev, initUsdt, tpUsdt } = enforceConstraints();
+        const initialEntry = parseFloat(elInitEntry.value) || 1; 
+        const tpPrice = parseFloat(elTpPrice.value) || 0;
+        const reloadPrice = parseFloat(elReloadPrice.value) || 0;
+        let reloadUsdt = parseFloat(elReloadUsdtInput.value) || 0;
+
+        const initialTokens = initUsdt / initialEntry;
+        const initialMargin = initUsdt / lev;
+        const freeMargin = accountBal - initialMargin;
+
+        const tpTokens = tpUsdt / initialEntry;
+        const tpMarginFreed = tpUsdt / lev;
+        let realizedPnl = (tradeDirection === 'LONG') ? (tpTokens * (tpPrice - initialEntry)) : (tpTokens * (initialEntry - tpPrice));
+        
+        const remainingTokens = initialTokens - tpTokens;
+        const remainingCost = remainingTokens * initialEntry;
+
+        const currentAvailableMargin = Math.max(0, freeMargin + tpMarginFreed + realizedPnl);
+        const maxReloadUsdt = currentAvailableMargin * lev;
+
+        if (reloadUsdt > maxReloadUsdt) {
+            reloadUsdt = maxReloadUsdt;
+            elReloadUsdtInput.value = reloadUsdt.toFixed(2);
+            triggerClampAnimation(elReloadUsdtInput);
+        }
+
+        const reloadTokens = reloadUsdt / initialEntry;
+        const reloadCost = reloadTokens * reloadPrice;
+
+        if (initUsdt > 0) {
+            elTpPctSlider.value = (tpUsdt / initUsdt) * 100;
+            elReloadPctSlider.value = (reloadUsdt / initUsdt) * 100;
+            elTpPctLabel.innerText = `${((tpUsdt / initUsdt) * 100).toFixed(1)}%`;
+            elReloadPctLabel.innerText = `${((reloadUsdt / initUsdt) * 100).toFixed(1)}%`;
+        }
+
+        const newTotalTokens = remainingTokens + reloadTokens;
+        let newAvgEntry = (newTotalTokens > 0) ? ((remainingCost + reloadCost) / newTotalTokens) : 0;
+        let entryShift = newAvgEntry - initialEntry;
+
+        elInitMargin.innerText = formatCurrency(initialMargin);
+        elFreeMargin.innerText = formatCurrency(freeMargin);
+
+        if (realizedPnl >= 0) {
+            elRealized.innerText = `+${formatCurrency(realizedPnl)}`;
+            elRealized.className = 'stat-value text-green';
+        } else {
+            elRealized.innerText = `${formatCurrency(realizedPnl)}`;
+            elRealized.className = 'stat-value text-red';
+        }
+
+        elRemTokens.innerText = formatTokens(remainingTokens);
+        elNewTotal.innerText = formatTokens(newTotalTokens);
+        
+        const shiftSign = entryShift >= 0 ? '+' : '';
+        const colorClass = (tradeDirection === 'LONG') 
+            ? (entryShift > 0 ? 'text-red' : 'text-green')
+            : (entryShift < 0 ? 'text-red' : 'text-green');
+            
+        elNewEntry.innerHTML = `${formatCurrency(newAvgEntry)} <br><span class="${colorClass}" style="font-size:12px;">(${shiftSign}${formatCurrency(entryShift)})</span>`;
+    }
+
+    // Toolbar Functions
+    function startNewTrade() {
+        elAssetTicker.value = "TICKER_NAME";
+        setDirection('LONG');
+        elAccountBalance.value = 10000;
+        elLeverage.value = 20;
+        
+        elInitUsdt.value = 10000 * 20; 
+        elInitEntry.value = 100;
+        elTpPrice.value = 110;
+        elReloadPrice.value = 105;
+        
+        elTpPctSlider.value = 25;
+        elReloadPctSlider.value = 25;
+        
+        handleSliderChange('tp');
+        handleSliderChange('reload');
+    }
+
+    function saveTrade() {
+        const newTrade = {
+            id: Date.now(),
+            ticker: elAssetTicker.value || 'UNNAMED',
+            direction: tradeDirection,
+            acc: elAccountBalance.value,
+            lev: elLeverage.value,
+            initUsdt: elInitUsdt.value,
+            initEntry: elInitEntry.value,
+            tpPrice: elTpPrice.value,
+            tpUsdt: elTpUsdtInput.value,
+            reloadPrice: elReloadPrice.value,
+            reloadUsdt: elReloadUsdtInput.value,
+            date: new Date().toLocaleDateString()
+        };
+        savedTrades.unshift(newTrade);
+        localStorage.setItem('compounderSavedTrades', JSON.stringify(savedTrades));
+        renderSavedTrades();
+    }
+
+    function loadTrade(id) {
+        const trade = savedTrades.find(t => t.id === id);
+        if(!trade) return;
+        
+        elAssetTicker.value = trade.ticker;
+        setDirection(trade.direction);
+        elAccountBalance.value = trade.acc;
+        elLeverage.value = trade.lev;
+        elInitUsdt.value = trade.initUsdt;
+        elInitEntry.value = trade.initEntry;
+        elTpPrice.value = trade.tpPrice;
+        elTpUsdtInput.value = trade.tpUsdt;
+        elReloadPrice.value = trade.reloadPrice;
+        elReloadUsdtInput.value = trade.reloadUsdt;
+        
+        calculate();
+    }
+
+    function deleteTrade(e, id) {
+        e.stopPropagation(); 
+        savedTrades = savedTrades.filter(t => t.id !== id);
+        localStorage.setItem('compounderSavedTrades', JSON.stringify(savedTrades));
+        renderSavedTrades();
+    }
+
+    function renderSavedTrades() {
+        savedTradesList.innerHTML = '';
+        if(savedTrades.length === 0) {
+            savedTradesList.innerHTML = '<div style="color:var(--text-muted); font-size:12px; text-align:center; padding: 20px;">No saved trades yet.</div>';
+            return;
+        }
+
+        savedTrades.forEach(trade => {
+            const badgeClass = trade.direction === 'LONG' ? 'badge-long' : 'badge-short';
+            const html = `
+                <div class="saved-trade-item" onclick="loadTrade(${trade.id})">
+                    <button class="delete-btn" onclick="deleteTrade(event, ${trade.id})">✖</button>
+                    <div class="saved-trade-header">
+                        <span class="saved-trade-ticker">${trade.ticker}</span>
+                        <span class="badge ${badgeClass}">${trade.direction}</span>
+                    </div>
+                    <div class="saved-trade-details">
+                        <span>Entry: ${formatCurrency(trade.initEntry)}</span>
+                        <span>Size: ${formatCurrency(trade.initUsdt)}</span>
+                        <span>${trade.date}</span>
+                    </div>
+                </div>
+            `;
+            savedTradesList.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    // --- Core Canvas Generation Engine ---
+    // This helper builds the perfect image for both Exporting and Sharing
+    function generateCanvas(callback) {
+        const container = document.getElementById('appContainer');
+        const list = document.getElementById('savedTradesList');
+        
+        // Hide scrollbars for clean shot
+        list.style.overflowY = 'hidden';
+
+        // Slider Fix Hack
+        const sliders = document.querySelectorAll('input[type="range"]');
+        const placeholders = [];
+
+        sliders.forEach(slider => {
+            const track = document.createElement('div');
+            track.style.width = '100%';
+            track.style.height = '4px';
+            track.style.background = 'var(--border)';
+            track.style.borderRadius = '2px';
+            track.style.position = 'relative';
+            track.style.margin = '10px 0';
+
+            const fill = document.createElement('div');
+            fill.style.width = slider.value + '%';
+            fill.style.height = '100%';
+            fill.style.background = 'var(--accent)';
+            fill.style.borderRadius = '2px';
+
+            const thumb = document.createElement('div');
+            thumb.style.width = '16px';
+            thumb.style.height = '16px';
+            thumb.style.background = 'var(--accent)';
+            thumb.style.borderRadius = '50%';
+            thumb.style.position = 'absolute';
+            thumb.style.top = '-6px';
+            thumb.style.left = `calc(${slider.value}% - 8px)`;
+
+            track.appendChild(fill);
+            track.appendChild(thumb);
+
+            slider.parentNode.insertBefore(track, slider);
+            placeholders.push({ slider, track });
+            slider.style.display = 'none'; 
+        });
+        
+        html2canvas(container, {
+            backgroundColor: '#0b0e11',
+            scale: 2 
+        }).then(canvas => {
+            // Restore UI immediately
+            list.style.overflowY = 'auto'; 
+            placeholders.forEach(p => {
+                p.slider.style.display = '';
+                p.track.remove();
+            });
+            // Return canvas to button function
+            callback(canvas);
+        });
+    }
+
+    // Feature 1: Export Image
+    function exportImage() {
+        const ticker = elAssetTicker.value || 'TRADE';
+        generateCanvas(canvas => {
+            const link = document.createElement('a');
+            link.download = `Compounder_${ticker}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+
+    // Feature 2: Share Image
+    function shareImage() {
+        const ticker = elAssetTicker.value || 'TRADE';
+        generateCanvas(canvas => {
+            canvas.toBlob(blob => {
+                const file = new File([blob], `Compounder_${ticker}.png`, { type: 'image/png' });
+                
+                // Check if device supports Web Share API for files
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    navigator.share({
+                        title: `${ticker} Trade Plan`,
+                        text: `Here is my position compounding setup for ${ticker}.`,
+                        files: [file]
+                    }).catch(err => {
+                        console.log('Share window closed or failed:', err);
+                    });
+                } else {
+                    // Fallback for Desktop Browsers that don't support direct file sharing
+                    alert("Your browser does not support direct file sharing. Falling back to image download.");
+                    const link = document.createElement('a');
+                    link.download = `Compounder_${ticker}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }
+            }, 'image/png');
+        });
+    }
+
+    // Event Listeners
+    elAccountBalance.addEventListener('input', calculate);
+    elInitUsdt.addEventListener('change', calculate);
+    elInitEntry.addEventListener('input', calculate);
+    elLeverage.addEventListener('input', calculate);
+    elTpPrice.addEventListener('input', calculate);
+    elTpUsdtInput.addEventListener('change', calculate);
+    elReloadPrice.addEventListener('input', calculate);
+    elReloadUsdtInput.addEventListener('change', calculate);
+
+    // Init App
+    renderSavedTrades();
+    calculate();
+</script>
+
+</body>
+</html>
